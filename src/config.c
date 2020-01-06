@@ -371,21 +371,8 @@ void loadServerConfigFromString(char *config) {
                 exit(1);
             }
         } else if (!strcasecmp(argv[0],"logfile") && argc == 2) {
-            FILE *logfp;
-
             zfree(server.logfile);
             server.logfile = zstrdup(argv[1]);
-            if (server.logfile[0] != '\0') {
-                /* Test if we are able to open the file. The server will not
-                 * be able to abort just for this problem later... */
-                logfp = fopen(server.logfile,"a");
-                if (logfp == NULL) {
-                    err = sdscatprintf(sdsempty(),
-                        "Can't open the log file: %s", strerror(errno));
-                    goto loaderr;
-                }
-                fclose(logfp);
-            }
         } else if (!strcasecmp(argv[0],"include") && argc == 2) {
             loadServerConfig(argv[1],NULL);
         } else if ((!strcasecmp(argv[0],"client-query-buffer-limit")) && argc == 2) {
@@ -503,6 +490,18 @@ void loadServerConfigFromString(char *config) {
         i = linenum-1;
         err = "replicaof directive not allowed in cluster mode";
         goto loaderr;
+    }
+
+    if (server.logfile[0] != '\0') {
+        /* Test if we are able to open the file. The server will not
+         * be able to abort just for this problem later... */
+        FILE *logfp = fopen(server.logfile,"a");
+        if (logfp == NULL) {
+            err = sdscatprintf(sdsempty(),
+                               "Can't open the log file: %s", strerror(errno));
+            goto loaderr;
+        }
+        fclose(logfp);
     }
 
     sdsfreesplitres(lines,totlines);
